@@ -24,12 +24,24 @@ namespace modules {
     // Load configuration values
     m_interval = m_conf.get(name(), "interval", m_interval);
 
-    auto sink_name = m_conf.get(name(), "sink", ""s);
+    // true => sink | false => source
+    // no entry in the config is the default sink
+    bool is_sink_or_source = true;
+    string pa_name = "";
+
+    if (m_conf.has(name(), "sink")) {
+      pa_name = m_conf.get(name(), "sink", ""s);
+      is_sink_or_source = true;
+    } else if (m_conf.has(name(), "source")) {
+      pa_name = m_conf.get(name(), "source", ""s);
+      is_sink_or_source = false;
+    }
+
     bool m_max_volume = m_conf.get(name(), "use-ui-max", true);
     m_reverse_scroll = m_conf.get(name(), "reverse-scroll", false);
 
     try {
-      m_pulseaudio = std::make_unique<pulseaudio>(m_log, move(sink_name), m_max_volume);
+      m_pulseaudio = std::make_unique<pulseaudio>(m_log, move(pa_name), is_sink_or_source, m_max_volume);
     } catch (const pulseaudio_error& err) {
       throw module_error(err.what());
     }

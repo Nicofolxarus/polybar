@@ -26,9 +26,9 @@ class pulseaudio {
   enum class evtype { NEW = 0, CHANGE, REMOVE, SERVER };
   using queue = std::queue<evtype>;
 
- public:
-  explicit pulseaudio(const logger& logger, string&& sink_name, bool m_max_volume);
-  ~pulseaudio();
+  public:
+    explicit pulseaudio(const logger& logger, string&& name, bool is_sink_or_source, bool m_max_volume);
+    ~pulseaudio();
 
   pulseaudio(const pulseaudio& o) = delete;
   pulseaudio& operator=(const pulseaudio& o) = delete;
@@ -46,14 +46,16 @@ class pulseaudio {
   void toggle_mute();
   bool is_muted();
 
- private:
-  void update_volume(pa_operation* o);
-  static void check_mute_callback(pa_context* context, const pa_sink_info* info, int eol, void* userdata);
-  static void get_sink_volume_callback(pa_context* context, const pa_sink_info* info, int is_last, void* userdata);
-  static void subscribe_callback(pa_context* context, pa_subscription_event_type_t t, uint32_t idx, void* userdata);
-  static void simple_callback(pa_context* context, int success, void* userdata);
-  static void sink_info_callback(pa_context* context, const pa_sink_info* info, int eol, void* userdata);
-  static void context_state_callback(pa_context* context, void* userdata);
+  private:
+    void update_volume(pa_operation *o);
+    static void check_mute_callback(pa_context *context, const pa_sink_info *info, int eol, void *userdata);
+    static void get_sink_volume_callback(pa_context *context, const pa_sink_info *info, int is_last, void *userdata);
+    static void get_source_volume_callback(pa_context *context, const pa_source_info *info, int is_last, void *userdata);
+    static void subscribe_callback(pa_context* context, pa_subscription_event_type_t t, uint32_t idx, void* userdata);
+    static void simple_callback(pa_context *context, int success, void *userdata);
+    static void sink_info_callback(pa_context *context, const pa_sink_info *info, int eol, void *userdata);
+    static void source_info_callback(pa_context *context, const pa_source_info *info, int eol, void *userdata);
+    static void context_state_callback(pa_context *context, void *userdata);
 
   inline void wait_loop(pa_operation* op, pa_threaded_mainloop* loop);
 
@@ -64,22 +66,24 @@ class pulseaudio {
    */
   std::atomic_bool m_state_callback_signal{false};
 
-  // used for temporary callback results
-  int success{0};
-  pa_cvolume cv{};
-  bool muted{false};
-  // default sink name
-  static constexpr auto DEFAULT_SINK = "@DEFAULT_SINK@";
+    // used for temporary callback results
+    int success{0};
+    pa_cvolume cv{};
+    bool muted{false};
+    // default sink name
+    static constexpr auto DEFAULT_SINK = "@DEFAULT_SINK@";
+    static constexpr auto DEFAULT_SOURCE = "@DEFAULT_SOURCE@";
 
   pa_context* m_context{nullptr};
   pa_threaded_mainloop* m_mainloop{nullptr};
 
   queue m_events;
 
-  // specified sink name
-  string spec_s_name;
-  string s_name;
-  uint32_t m_index{0};
+    // specified sink name
+    string spec_s_name;
+    string s_name;
+    bool is_sink_or_source; // true => sink / false => source
+    uint32_t m_index{0};
 
   pa_volume_t m_max_volume{PA_VOLUME_UI_MAX};
 };

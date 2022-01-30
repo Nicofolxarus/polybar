@@ -45,8 +45,17 @@ class config {
 
   void warn_deprecated(const string& section, const string& key, string replacement = "") const;
 
+
   /**
-   * Returns true if a given parameter exists
+   * Returns true if a given parameter exists by name
+   */
+  bool has(const string& key) const {
+    auto it = m_sections.find(section());
+    return it != m_sections.end() && it->second.find(key) != it->second.end();
+  }
+
+  /**
+   * Returns true if a given parameter exists by section and name
    */
   bool has(const string& section, const string& key) const {
     auto it = m_sections.find(section);
